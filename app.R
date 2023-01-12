@@ -121,11 +121,16 @@ server <- function(input, output, session){
   output$hot <- renderRHandsontable({
     dropdownOptions <- {
       n <- counter$n
-      levs <- c(input$textin1, input$textin2)
+      levs <- c(input$textin1)
+      if(n == 2){
+        levs <- append(levs, input$textin2)
+      }
       if(n == 3){
+        levs <- append(levs, input$textin2)
         levs <- append(levs, input$textin3)
       }
       if(n == 4){
+        levs <- append(levs, input$textin2)
         levs <- append(levs, input$textin3)
         levs <- append(levs, input$textin4)
       }
@@ -228,18 +233,23 @@ server <- function(input, output, session){
     
   })
   
-  # SupportLevels <- reactive({
-  #   n <- counter$n
-  #   levs <- paste0(input$textin1, input$textin2)
-  #   if(n == 3){
-  #     levs <- paste0(levs, input$textin3)
-  #   }
-  #   if(n == 4){
-  #     levs <- paste0(levs, input$textin3)
-  #     levs <- paste0(levs, input$textin4)
-  #   }
-  #   levs
-  # })
+  SupportLevels <- reactive({
+    n <- counter$n
+    levs <- paste0(input$textin1)
+    if(n == 2){
+      levs <- paste0(levs, input$textin2)
+    }
+    if(n == 3){
+      levs <- paste0(levs, input$textin2)
+      levs <- paste0(levs, input$textin3)
+    }
+    if(n == 4){
+      levs <- paste0(levs, input$textin2)
+      levs <- paste0(levs, input$textin3)
+      levs <- paste0(levs, input$textin4)
+    }
+    levs
+  })
   
   output$textbox_ui <- renderUI({ textboxes() })
   #
@@ -251,11 +261,16 @@ server <- function(input, output, session){
     zig$numeric.weight <- zig$Relevance * zig$Source.reliability * zig$Information.reliability
     outcomeCats <- reactive({
       n <- counter$n
-      levs <- c(input$textin1, input$textin2)
+      levs <- c(input$textin1)
+      if(n == 2){
+        levs <- append(levs, input$textin2)
+      }
       if(n == 3){
+        levs <- append(levs, input$textin2)
         levs <- append(levs, input$textin3)
       }
       if(n == 4){
+        levs <- append(levs, input$textin2)
         levs <- append(levs, input$textin3)
         levs <- append(levs, input$textin4)
       }
@@ -282,8 +297,12 @@ server <- function(input, output, session){
       #Prepare additional elements for plot ####
       
       # create data frame that will be used as category bars in plot
+      if(length(outcomeCats())>1){
       cat.bars<- data.frame(numeric.support=factor(c(1:length(outcomeCats()))),xmin=seq(0.5, length(outcomeCats())-0.5, 1), xmax=seq(1.5, length(outcomeCats())+0.5, 1), y=(0))
-      
+      }
+      if(length(outcomeCats())==1){
+        cat.bars<- data.frame(numeric.support=factor(c(1:length(outcomeCats()))),xmin=0.5, xmax=1.5, y=(0))
+      }
       # Calculate total weight per outcome category
       
       zig.areas <- zig.sort%>%
@@ -300,7 +319,7 @@ server <- function(input, output, session){
       # calculate bootstrapped confidence interval
       
       #bootstrap confidence intervals
-      df <- data.frame(x=zig$numeric.support, w=zig$numeric.weight/input[["maxvalues"]])
+      df <- data.frame(x=zig$numeric.support, w=zig$numeric.weight/input[["maxvalues"]]**3)
       wm3 <- function(d,i){
         return(weighted.mean(d[i,1], d[i,2]))
       }
@@ -310,14 +329,26 @@ server <- function(input, output, session){
       lower.ci<- bci$basic[4]
       upper.ci<- bci$basic[5]
       
-      extra.rows <- data.frame(Evidence = letters[1:4], Relevance=c(0,0,0,0), Source.reliability=c(0,0,0,0), Information.reliability=c(0,0,0,0), cumul=c(0,0,0,0),numeric.support=c(1,2,3,4), y.coord=c(0,0,0,0), numeric.weight=c(0,0,0,0))
+      size1 <- 1
+      
+      if(is.null(lower.ci)&length(unique(zig$numeric.support))==1){
+        lower.ci<-zig$numeric.support[1]
+        size1<-0
+        }
+      if(is.null(upper.ci)&length(unique(zig$numeric.support))==1){
+        upper.ci<-zig$numeric.support[1]
+        size1<-0
+        }
+      
+      #To ensure all categories are plotted
+      extra.rows <- data.frame(Evidence = letters[1:4], Relevance=c(0,0,0,0), Source.reliability=c(0,0,0,0), Information.reliability=c(0,0,0,0), cumul=c(0,0,0,0),numeric.support=c(1,2,3,4), y.coord=c(NA,NA,NA,NA), numeric.weight=c(0,0,0,0))
       zig.sort <- rbind(zig.sort,extra.rows)
       
       #output$debug1 <- renderText({str(zig.sort)})
       
       ggplot()+
-        geom_tile(data=zig.sort, aes(x=numeric.support,y=y.coord,width=numeric.weight/(input[["maxvalues"]]*10),height=1, fill=factor(numeric.support),colour=factor(numeric.support)),alpha=0.4)+
-        geom_errorbarh(data=cat.bars, aes(xmin=xmin,xmax=xmax,y=y,colour=factor(numeric.support)),height=0,size=1)+
+        geom_tile(data=zig.sort, aes(x=numeric.support,y=y.coord,width=numeric.weight/(input[["maxvalues"]]**3),height=1, fill=factor(numeric.support),colour=factor(numeric.support)),alpha=0.4, size=0.3)+
+        geom_errorbarh(data=cat.bars, aes(xmin=xmin,xmax=xmax,y=y,colour=factor(numeric.support)),height=0.1,size=0.5)+
         scale_x_continuous(breaks=1:length(outcomeCats()),label=outcomeCats())+
         scale_y_continuous(expand = c(0, 0.2))+
         scale_fill_manual(values = c("#990000","#FFCC00","#66CC00","darkgreen"),guide="none")+
@@ -327,7 +358,7 @@ server <- function(input, output, session){
         ylab("Number of evidence blocks")+
         theme_classic()+
         geom_point(data=zig.w.means,aes(x=w.mean,y=-0.5),shape=16,size=5)+
-        geom_errorbarh(aes(xmin=lower.ci,xmax=upper.ci,y=-0.5),size=1,height=0.5)
+        geom_errorbarh(aes(xmin=lower.ci,xmax=upper.ci,y=-0.5),size=size1,height=0.5)
       
       
       
@@ -339,11 +370,16 @@ server <- function(input, output, session){
   observeEvent(input$add_graph, {
     outcomeCats <- reactive({
       n <- counter$n
-      levs <- c(input$textin1, input$textin2)
+      levs <- c(input$textin1)
+      if(n == 2){
+        levs <- append(levs, input$textin2)
+      }
       if(n == 3){
+        levs <- append(levs, input$textin2)
         levs <- append(levs, input$textin3)
       }
       if(n == 4){
+        levs <- append(levs, input$textin2)
         levs <- append(levs, input$textin3)
         levs <- append(levs, input$textin4)
       }
