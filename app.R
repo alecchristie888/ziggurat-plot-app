@@ -389,13 +389,6 @@ server <- function(input, output, session){
         cat.bars<- data.frame(numeric.support=factor(numericoutcomeCats()),xmin=numericoutcomeCats(), xmax=numericoutcomeCats(), y=(0))
       }
       
-      # Calculate total weight per outcome category
-      
-      zig.areas <- zig.sort%>%
-        group_by(numeric.support)%>%
-        summarise(sum.support=sum(numeric.weight),numeric.support=mean(numeric.support),num.ev=n())%>%
-        ungroup()
-      
       # calculate the weighted mean
       
       zig.w.means<- data.frame(w.mean=weighted.mean(zig$numeric.support,zig$numeric.weight/input[["maxvalues"]]**3))
@@ -437,12 +430,12 @@ server <- function(input, output, session){
       
       #output$debug1 <- renderText({str(zig.sort)})
       minnumoutcat <- min(numericoutcomeCats())
-      adjustsizeplot <- 16+(16*0.25*(1-minnumoutcat/-2))
+      adjustsizeplot <- 20+(20*0.25*(1-minnumoutcat/-2))
 
       ggplot()+
         geom_tile(data=zig.sort, aes(x=numeric.support,y=y.coord,width=numeric.weight/(input[["maxvalues"]]**3),height=1, fill=factor(numeric.support), colour=factor(numeric.support)),alpha=0.4, size=0.3)+
         geom_errorbarh(data=cat.bars, aes(xmin=xmin,xmax=xmax,y=y,colour=factor(numeric.support)),height=0.1,size=0.5)+
-        scale_x_continuous(breaks=numericoutcomeCats(),label=outcomeCats(),expand = c(0,0.5))+
+        scale_x_continuous(breaks=numericoutcomeCats(),label=gsub('\\s','\n',outcomeCats()),expand = c(0,0.5))+
         scale_y_continuous(expand = c(0, 0.2))+
         scale_fill_manual(values = c("#990000","#FFCC00","#66CC00","darkgreen"),guide="none")+
         scale_colour_manual(values = c("#990000","#FFCC00","#66CC00","darkgreen"),guide="none")+
@@ -450,8 +443,8 @@ server <- function(input, output, session){
         xlab("Strength of support")+
         ylab("Number of pieces of evidence")+
         theme_classic()+
-        theme(axis.title.y = element_text(size=18, margin = unit(c(0, 5, 0, 0), "mm")), 
-              axis.title.x = element_text(size=18, margin = unit(c(5, 0, 0, 0), "mm")),
+        theme(axis.title.y = element_text(size=25, margin = unit(c(0, 5, 0, 0), "mm")), 
+              axis.title.x = element_text(size=25, margin = unit(c(5, 0, 0, 0), "mm")),
               axis.text = element_text(size=adjustsizeplot))+
         geom_point(data=zig.w.means,aes(x=w.mean,y=-0.5),shape=16,size=5)+
         geom_errorbarh(aes(xmin=lower.ci,xmax=upper.ci,y=-0.5),size=size1,height=0.5)
