@@ -18,10 +18,10 @@ ui <- function(request){shinyUI(fluidPage(
   titlePanel("Ziggurat Plot"),
   sidebarLayout(
     sidebarPanel(
-      helpText("Use this page to make a Ziggurat plot of your evidence."),
+      helpText("Use this page to make a Ziggurat plot of your evidence. If you want to bookmark your work at any time, scroll down the page and click the bookmark button."),
       
-      h4(helpText("1.a Define Support Levels")),
-      helpText("First, enter your levels of support below, in ascending order. For example, 'Refutes', 'Mixed', 'Some', 'Strong'. Use the buttons to add or remove levels as you please; you can have a minimum of 2 and a maximum of 4 levels"),
+      h4(helpText("1.a Define strength of support levels")),
+      helpText("First, enter your levels of support below, in ascending order. For example, 'Refutes', 'Mixed', 'Weakly supports', 'Strongly supports'. Use the buttons to add or remove levels as you please; you can have a minimum of 2 and a maximum of 4 levels"),
       uiOutput("textbox_ui"),
       actionButton("add_btn", "Add Support Level", style='padding:4px; font-size:80%'),
       br(),
@@ -32,6 +32,9 @@ ui <- function(request){shinyUI(fluidPage(
       numericInput("minvalues","Minimum score:", 0),
       numericInput("maxvalues","Maximum score:", 3),
       numericInput("minbreaks","Steps of:", 1),
+      h4(helpText("1.c Define numeric values for strength of support levels")),
+      helpText("Provide the numeric values below for each strength of support - we suggest -2, 0, 1, and 2 for refutes, mixed, weakly supports, and strongly supports, respectively."),
+      uiOutput("strengthsupport_ui"),
       br(),
       h4(helpText("Bookmarking")),
       helpText("On bookmarking your data, the URL will update. Copy this and you will be able to return to the app. On returning to the app, make sure to click add graph again to show your ziggurat plot again."),
@@ -189,7 +192,7 @@ server <- function(input, output, session){
   output$counter <- renderPrint(print(counter$n))
   SupportList <- c()
   
-  textboxes <- reactive({
+  textboxes1 <- reactive({
     n <- counter$n
     
     if (n > 0) {
@@ -233,6 +236,51 @@ server <- function(input, output, session){
     
   })
   
+  
+  textboxes2 <- reactive({
+    n <- counter$n
+    
+    if (n > 0) {
+      
+      # If the no. of textboxes previously were more than zero, then 
+      #save the text inputs in those text boxes 
+      if(prevcount$n > 0){
+        
+        vals_support = c()
+        if(prevcount$n > n){
+          lesscnt <- n
+          isInc <- FALSE
+        }else{
+          lesscnt <- prevcount$n
+          isInc <- TRUE
+        }
+        for(i in 1:lesscnt){
+          inpid = paste0("textinsupport",i)
+          vals_support[i] = input[[inpid]] 
+        }
+        if(isInc){
+          vals_support <- c(vals_support, "")
+        }
+        
+        if(vals_support[1]==""){
+          vals_support <- c('-2','0','1', '2')
+        }
+        
+        lapply(seq_len(n), function(i) {
+          textInput(inputId = paste0("textinsupport", i),
+                    label = paste0("Support Level ", i), value = vals_support[i])
+        })
+        
+      }else{
+        lapply(seq_len(n), function(i) {
+          textInput(inputId = paste0("textinsupport", i),
+                    label = paste0("Support Level ", i), value = "")
+        }) 
+      }
+    }
+    
+  })
+  
   SupportLevels <- reactive({
     n <- counter$n
     levs <- paste0(input$textin1)
@@ -251,7 +299,26 @@ server <- function(input, output, session){
     levs
   })
   
-  output$textbox_ui <- renderUI({ textboxes() })
+  NumericSupportLevels <- reactive({
+    n <- counter$n
+    nums <- paste0(input$textinsupport1)
+    if(n == 2){
+      nums <- paste0(nums, input$textinsupport2)
+    }
+    if(n == 3){
+      nums <- paste0(nums, input$textinsupport2)
+      nums <- paste0(nums, input$textinsupport3)
+    }
+    if(n == 4){
+      nums <- paste0(nums, input$textinsupport2)
+      nums <- paste0(nums, input$textinsupport3)
+      nums <- paste0(nums, input$textinsupport4)
+    }
+    nums
+  })
+  
+  output$textbox_ui <- renderUI({ textboxes1() })
+  output$strengthsupport_ui <- renderUI({ textboxes2() })
   #
   
   ### Now, let's try plotting the inputted data
@@ -276,7 +343,24 @@ server <- function(input, output, session){
       }
       levs
     })
-    CatToNumeric <- data.frame(Support=outcomeCats(), numeric.support=c(1:length(outcomeCats())))
+    numericoutcomeCats <- reactive({
+      n <- counter$n
+      nums <- c(input$textinsupport1)
+      if(n == 2){
+        nums <- append(nums, input$textinsupport2)
+      }
+      if(n == 3){
+        nums <- append(nums, input$textinsupport2)
+        nums <- append(nums, input$textinsupport3)
+      }
+      if(n == 4){
+        nums <- append(nums, input$textinsupport2)
+        nums <- append(nums, input$textinsupport3)
+        nums <- append(nums, input$textinsupport4)
+      }
+      as.numeric(nums)
+    })
+    CatToNumeric <- data.frame(Support=outcomeCats(), numeric.support=numericoutcomeCats())
     
     if(length(setdiff(zig$Support, outcomeCats()))>0){
       "Some of the support values entered in the table don't match Support Levels"
@@ -298,11 +382,13 @@ server <- function(input, output, session){
       
       # create data frame that will be used as category bars in plot
       if(length(outcomeCats())>1){
-      cat.bars<- data.frame(numeric.support=factor(c(1:length(outcomeCats()))),xmin=seq(0.5, length(outcomeCats())-0.5, 1), xmax=seq(1.5, length(outcomeCats())+0.5, 1), y=(0))
+        numeric.out.cats <- numericoutcomeCats()
+        cat.bars<- data.frame(numeric.support=factor(numeric.out.cats),xmin=c(numeric.out.cats[1],numeric.out.cats[2],numeric.out.cats[2],numeric.out.cats[2]), xmax=c(numeric.out.cats[2],numeric.out.cats[2],numeric.out.cats[3],numeric.out.cats[4]), y=(0))
       }
       if(length(outcomeCats())==1){
-        cat.bars<- data.frame(numeric.support=factor(c(1:length(outcomeCats()))),xmin=0.5, xmax=1.5, y=(0))
+        cat.bars<- data.frame(numeric.support=factor(numericoutcomeCats()),xmin=numericoutcomeCats(), xmax=numericoutcomeCats(), y=(0))
       }
+      
       # Calculate total weight per outcome category
       
       zig.areas <- zig.sort%>%
@@ -312,13 +398,14 @@ server <- function(input, output, session){
       
       # calculate the weighted mean
       
-      zig.w.means<- data.frame(w.mean=weighted.mean(zig$numeric.support,zig$numeric.weight))
+      zig.w.means<- data.frame(w.mean=weighted.mean(zig$numeric.support,zig$numeric.weight/input[["maxvalues"]]**3))
       
-      guide.points<- data.frame(numeric.support=c(-1,0,0.5,1))
+      guide.points<- data.frame(numeric.support=numericoutcomeCats())
       
       # calculate bootstrapped confidence interval
       
       #bootstrap confidence intervals
+      if(length(unique(zig$numeric.support))>1){
       df <- data.frame(x=zig$numeric.support, w=zig$numeric.weight/input[["maxvalues"]]**3)
       wm3 <- function(d,i){
         return(weighted.mean(d[i,1], d[i,2]))
@@ -329,39 +416,45 @@ server <- function(input, output, session){
       lower.ci<- bci$basic[4]
       upper.ci<- bci$basic[5]
       
+      if(lower.ci<min(zig$numeric.support)){
+        lower.ci <- min(zig$numeric.support)
+      }
+      if(upper.ci>max(zig$numeric.support)){
+        upper.ci <- max(zig$numeric.support)
+      }
+      
       size1 <- 1
       
-      if(is.null(lower.ci)&length(unique(zig$numeric.support))==1){
+      }else{
         lower.ci<-zig$numeric.support[1]
-        size1<-0
-        }
-      if(is.null(upper.ci)&length(unique(zig$numeric.support))==1){
         upper.ci<-zig$numeric.support[1]
         size1<-0
-        }
+      }
       
       #To ensure all categories are plotted
-      extra.rows <- data.frame(Evidence = letters[1:4], Relevance=c(0,0,0,0), Source.reliability=c(0,0,0,0), Information.reliability=c(0,0,0,0), cumul=c(0,0,0,0),numeric.support=c(1,2,3,4), y.coord=c(NA,NA,NA,NA), numeric.weight=c(0,0,0,0))
+      extra.rows <- data.frame(Evidence = letters[1:4], Relevance=c(0,0,0,0), Source.reliability=c(0,0,0,0), Information.reliability=c(0,0,0,0), cumul=c(0,0,0,0),numeric.support=numericoutcomeCats(), y.coord=c(NA,NA,NA,NA), numeric.weight=c(0,0,0,0))
       zig.sort <- rbind(zig.sort,extra.rows)
       
       #output$debug1 <- renderText({str(zig.sort)})
-      
+      minnumoutcat <- min(numericoutcomeCats())
+      adjustsizeplot <- 16+(16*0.25*(1-minnumoutcat/-2))
+
       ggplot()+
-        geom_tile(data=zig.sort, aes(x=numeric.support,y=y.coord,width=numeric.weight/(input[["maxvalues"]]**3),height=1, fill=factor(numeric.support),colour=factor(numeric.support)),alpha=0.4, size=0.3)+
+        geom_tile(data=zig.sort, aes(x=numeric.support,y=y.coord,width=numeric.weight/(input[["maxvalues"]]**3),height=1, fill=factor(numeric.support), colour=factor(numeric.support)),alpha=0.4, size=0.3)+
         geom_errorbarh(data=cat.bars, aes(xmin=xmin,xmax=xmax,y=y,colour=factor(numeric.support)),height=0.1,size=0.5)+
-        scale_x_continuous(breaks=1:length(outcomeCats()),label=outcomeCats())+
+        scale_x_continuous(breaks=numericoutcomeCats(),label=outcomeCats(),expand = c(0,0.5))+
         scale_y_continuous(expand = c(0, 0.2))+
         scale_fill_manual(values = c("#990000","#FFCC00","#66CC00","darkgreen"),guide="none")+
         scale_colour_manual(values = c("#990000","#FFCC00","#66CC00","darkgreen"),guide="none")+
         scale_alpha(guide='none')+
-        xlab("Degree of support")+
-        ylab("Number of evidence blocks")+
+        xlab("Strength of support")+
+        ylab("Number of pieces of evidence")+
         theme_classic()+
+        theme(axis.title.y = element_text(size=18, margin = unit(c(0, 5, 0, 0), "mm")), 
+              axis.title.x = element_text(size=18, margin = unit(c(5, 0, 0, 0), "mm")),
+              axis.text = element_text(size=adjustsizeplot))+
         geom_point(data=zig.w.means,aes(x=w.mean,y=-0.5),shape=16,size=5)+
         geom_errorbarh(aes(xmin=lower.ci,xmax=upper.ci,y=-0.5),size=size1,height=0.5)
-      
-      
-      
       
     }
     
@@ -412,7 +505,7 @@ server <- function(input, output, session){
   output$downloadPlot <- downloadHandler(
     filename = "ZigguratPlot.png",
     content = function(file) {
-      ggsave(file, ziggurat2(), device="png", width = 180, height = 97.5, units = "mm", dpi=600)
+      ggsave(file, ziggurat2(), device="png", width = 270, height = 146.25, units = "mm", dpi=600)
     }
   )
   
