@@ -6,81 +6,179 @@ library(dplyr)
 library(ggplot2)
 library(boot)
 library(shinythemes)
+library(shinydashboard)
 
 enableBookmarking(store = "url")
 
 DF = data.frame("Evidence"=LETTERS[1:5], "Relevance" = rep(0,5), "Source reliability" = rep(0,5), "Information reliability" = rep(0,5), "Support" = rep(NA,5), stringsAsFactors = FALSE)
 DF_template = data.frame("Evidence"=LETTERS[1:5], "Relevance" = rep("",5), "Source reliability" = rep("",5), "Information reliability" = rep("",5), "Support" = rep("",5), stringsAsFactors = FALSE)
 
-ui <- function(request){shinyUI(fluidPage(
-  theme = shinythemes::shinytheme("paper"),  # <--- Specify theme here
+ui <- function(request){shinyUI(
   
-  titlePanel("Ziggurat Plot"),
-  sidebarLayout(
-    sidebarPanel(
-      helpText("Use this page to make a Ziggurat plot of your evidence. If you want to bookmark your work at any time, scroll down the page and click the bookmark button."),
-      
-      h4(helpText("1.a Define strength of support levels")),
-      helpText("First, enter your levels of support below, in ascending order. For example, 'Refutes', 'Mixed', 'Weakly supports', 'Strongly supports'. Use the buttons to add or remove levels as you please; you can have a minimum of 2 and a maximum of 4 levels"),
-      uiOutput("textbox_ui"),
-      actionButton("add_btn", "Add Support Level", style='padding:4px; font-size:80%'),
-      br(),
-      actionButton("rm_btn", "Remove Support Level", style='padding:4px; font-size:80%'),
-      br(),
-      h4(helpText("1.b Define minimum and maximum scores")),
-      helpText("Provide the range of values below for which you wish to score evidence in terms of its relevance, source reliability, and information reliability, as well as the breaks between values (e.g., 0 to 3 in steps of 1)"),
-      numericInput("minvalues","Minimum score:", 0),
-      numericInput("maxvalues","Maximum score:", 3),
-      numericInput("minbreaks","Steps of:", 1),
-      h4(helpText("1.c Define numeric values for strength of support levels")),
-      helpText("Provide the numeric values below for each strength of support - we suggest -2, 0, 1, and 2 for refutes, mixed, weakly supports, and strongly supports, respectively."),
-      uiOutput("strengthsupport_ui"),
-      br(),
-      h4(helpText("Bookmarking")),
-      helpText("On bookmarking your data, the URL will update. Copy this and you will be able to return to the app. On returning to the app, make sure to click add graph again to show your ziggurat plot again."),
-      bookmarkButton(),
-      br(),
-      width=5
-      
-    ),
-    
-    mainPanel(
-      h4(helpText("2. Add Data")),
-      helpText("Then, add data to the table below (right-click to delete/insert rows). Remove any empty rows before clicking 'add graph'. You can bookmark your session at any time (scroll down to bottom left of screen)."),
-      helpText("Alternatively, you can upload your data in a .csv file using the template below."),
-      downloadButton("downloadDataTemplate", "Download Data Upload Template"), fileInput('file1', 'Choose CSV File'),
-      br(),
-      rHandsontableOutput("hot"),
-      #textOutput('debug1'),
-      br(),
-      h4(helpText("3. Create Plot")),
-      helpText("Once you're happy, generate a Ziggurat plot. You'll need to have at least two levels of support defined, and at least three rows of data. If you get an error, press this button again when you've fixed it."),
-      actionButton("add_graph", "Add Graph"),
-      br(),
-      
-      
-      h3(textOutput("zigerror")),
-      h3(textOutput("zigerror2")),
-      plotOutput("ziggy"),
-      br(),
-      
-      h4(helpText("4. Data Download")),
-      helpText("If you want to download the data you've entered, hit here."),
-      
-      downloadButton("downloadData", "Download Data"),
-      
-      br(),
-      br(),
-      
-      h4(helpText("5. Plot Download")),
-      helpText("If you want to download an image of the plot, hit here."),
-      
-      downloadButton("downloadPlot", "Download Plot")
-      
-      , width=7)
+  dashboardPage(skin = "yellow",
+                dashboardHeader(title="Ziggurat Plot Application", titleWidth = "calc(100% - 44px)"),
+                dashboardSidebar(
+                  sidebarMenu(id = "tabs",
+                              menuItem(
+                                "Information",
+                                tabName = "info_tab",
+                                icon = icon(name="info",style="color: #13dd3b; padding-left: 10px; font-size: 30px; padding-right: 30px")
+                              ),
+                              menuItem(
+                                "Define values",
+                                tabName = "vals_tab",
+                                icon = icon(name="keyboard", style="padding-right: 40px; font-size: 25px")
+                                ),
+                              menuItem(
+                                "Ziggurat plot",
+                                tabName = "plot_tab",
+                                icon = icon(name="cubes",style="color: #e4370c; font-size: 30px; padding-right: 40px")
+                                )
+                              )
+                  ),
+      dashboardBody(
+        tags$head( 
+          tags$style(HTML(".main-sidebar { font-size: 16px; } .sidebar-menu li { margin-bottom: 10px; }")) #change the font size to 20
+        ),
+        tabItems(
+          tabItem(
+            tabName="info_tab",
+                box(
+                  h2("Introduction"),
+                  p("This application is to assist those assessing assumptions using the Balance Evidence Assessment Model. To read more about the Balance Evidence Assessment Model, you can read",
+                  a(href="https://doi.org/10.31219/osf.io/ujk6n","this article.",target="_blank"),
+                  "A published open-access article will be available soon.",style='font-size:17px;'),
+                  p("The Balance Evidence Assessment Model (BEAM) is designed to help with the issue of how to weigh several 
+                  different pieces of evidence that may differ greatly in their source and relevance. A piece of evidence can be defined as:
+                  'Any relevant data, information, knowledge, and wisdom used to assess an assumption' related to a question of interest.
+                  BEAM is applied to assumptions, which can be identified when planning a project, to understand how strong the evidence is and our confidence
+                  that the assumption is valid.",style='font-size:17px;'),
+                  p("As an example, imagine you are part of a local NGO team on a project aiming to reduce and reverse the decline in seabird populations on an 
+                  island on which rats have been introduced. Following the",
+                  a(href="https://conservationstandards.org/about/","Conservation Standards,",target="_blank"),
+                  ", in the planning stage of a project, you might create a Situation Analysis (to identify relevant threats, 
+                  opportunities, and stakeholders) and a Theory of Change (to outline the logical steps by which a strategy will contribute to achieving set 
+                  targets). This would highlight that you are in fact making several key assumptions about how your actions will help you achieve your conservation
+                  targets.",style='font-size:17px;'),
+                  p("In a Situation Analysis, an example of an assumption may be: the seabird population is declining rapidly and problematically due to 
+                  the introduction of rats. In a Theory of Change, assumptions may include: 1) rat eradication through trapping (without poisoning) is socially 
+                  acceptable to local partners and communities; and 2) rat eradication through trapping (without poisoning) will lead to the recovery of the 
+                  seabird population within the project timescale. Others might include that rat eradication using trapping is feasible or cost-effective in 
+                  terms of the budgets and resources available.",style='font-size:17px;'),
+                  p("To check if these assumptions are valid you'll need to assess evidence from a range of sources including, but not limited to, local knowledge, 
+                  experience, and wisdom of practitioners and partners, scientific studies and syntheses, expert judgements, reports, databases (e.g., citizen 
+                  science), local records, and observations.",style='font-size:17px;'),
+                  h2("Balance Evidence Assessment Model (BEAM)"),
+                  p("BEAM helps you weigh this evidence by treating each piece of evidence as a cube. The size of each cube represents the weight of that piece of 
+                  evidence, which is represented by three dimensions: the information reliability, source reliability, and relevance. The diagram below shows how you
+                  can imagine weighing the evidence. Bigger cubes represent evidence with greater weight. The evidence may either refute or support the assumption you're
+                  assessing. There may be situations where evidence can only refute or support an assumption (true or false), but in most situations it will be more of a gradient
+                  of support (refutes, mixed support, weakly or strongly supports).",style='font-size:17px;'),
+                  br(),
+                  img(src="BEAMplot.png",height="50%",width="50%"),
+                  br(),
+                  p("You can then place the cube of evidence on the balance depending on how much it supports the assumption.
+                  You can then imagine how the balance may tilt based on all the cubes of evidence you have assembled. If we're confident in the assumption, it will tilt to the right, 
+                  if not it will tilt to the left, and may sit somewhere in between if we're not sure.",style='font-size:17px;'),
+                  h2("Using the Ziggurat plot app"),
+                  p("The Ziggurat plot app helps you to visualise the evidence you are assessing in a form similar to this diagram and understand how confident you are in the assumption you're assessing.",
+                  "For example, you may produce plots like the ones below, which show different scenarios based on the available evidence.",style='font-size:17px;'),
+                  br(),
+                  img(src="Zigplots.png",height="60%",width="60%"),
+                  br(),
+                  p("In the next tab (Define Values), you can edit the values you can assign to the pieces of evidence. We suggest a scale of 0-3 for assessing the information 
+                  reliability, source reliability, and relevance. You can also edit the names you give to different levels of support (we suggest the ones as above).
+                  You can also edit the numerical values associated to each level of support, for which the defaults are:
+                  -2 = Refutes, 0 = Mixed, 1 = Weakly Supports, and 2 = Strongly Supports. If you wanted to increase the required amount of supporting evidence for you to have confidence 
+                  in an assumption (i.e., a higher threshold or required level of proof), you could change the value for Refutes to -4, effectively doubling the leverage of refuting evidence (see below).",style='font-size:17px;'),
+                  br(),
+                  img(src="Zigplotsleverage.png",height="30%",width="30%"),
+                  width=12
+                )),
+          tabItem(
+            tabName = "vals_tab",
+            helpText("Use this page to define the levels of support and scores you can use to assess your evidence."),
+            box(
+              title="1.a Define strength of support levels",
+              collapsible = TRUE,
+              helpText("First, enter your levels of support below, in ascending order. For example, 'Refutes', 'Mixed', 'Weakly supports', 'Strongly supports'. Use the buttons to add or remove levels as you please; you can have a minimum of 2 and a maximum of 4 levels"),
+              uiOutput("textbox_ui"),
+              actionButton("add_btn", "Add Support Level", style='padding:4px; font-size:80%'),
+              br(),
+              actionButton("rm_btn", "Remove Support Level", style='padding:4px; font-size:80%'),
+              br(),
+              width=12
+            ),
+            box(
+              title="1.b Define minimum and maximum scores",
+              collapsible = TRUE,
+              helpText("Provide the range of values below for which you wish to score evidence in terms of its relevance, source reliability, and information reliability, as well as the breaks between values (e.g., 0 to 3 in steps of 1)"),
+              numericInput("minvalues","Minimum score:", 0),
+              numericInput("maxvalues","Maximum score:", 3),
+              numericInput("minbreaks","Steps of:", 1),
+              width=12
+            ),
+            box(
+              title="1.c Define numeric values for strength of support levels",
+              collapsible = TRUE,
+              helpText("Provide the numeric values below for each strength of support - we suggest -2, 0, 1, and 2 for refutes, mixed, weakly supports, and strongly supports, respectively. If you wanted to double the leverage of refuting evidence, 
+                       to increase the required amount of supporting evidence, you could set the refutes value as -4 (see Info tab). This could be done as a sensitivity analysis to see how much this changes your assessment of the evidence as a whole."),
+              uiOutput("strengthsupport_ui"),
+              width=12
+            )
+          ),
+          tabItem(
+            tabName = "plot_tab",
+            helpText("Use this page to make a Ziggurat plot of your evidence. If you want to bookmark your work at any time, scroll down the page and click the bookmark button."),
+            box(
+              title="2. Add Data",
+              solidHeader = TRUE,
+              helpText("You can now add data to the table below (right-click to delete/insert rows). Remove any empty rows before clicking 'add graph'."),
+              helpText("Alternatively, you can upload your data in a .csv file using the template below."),
+              downloadButton("downloadDataTemplate", "Download Data Upload Template"), fileInput('file1', 'Choose CSV File'),
+              br(),
+              rHandsontableOutput("hot",width="100%", height="100%"),
+              helpText("Remember to right click on the table to delete or insert rows. Don't leave any rows blank."),
+              #textOutput('debug1'),
+              width=12
+            ),
+            box(title="Bookmarking",
+                helpText("On bookmarking your data, the URL will update. Copy this and you will be able to return to the app. On returning to the app, make sure to click add graph again to show your ziggurat plot again."),
+                bookmarkButton(),
+                width=12
+            ),
+            box(
+              title="3. Create Plot",
+              solidHeader = TRUE,
+              helpText("Once you're happy, generate a Ziggurat plot. You'll need to have at least two levels of support defined, and at least three rows of data. If you get an error, press this button again when you've fixed it."),
+              actionButton("add_graph", "Add Graph"),
+              br(),
+              h3(textOutput("zigerror")),
+              h3(textOutput("zigerror2")),
+              plotOutput("ziggy"),
+              width=12
+              ),
+            box(
+              title="4. Data Download",
+              collapsible = TRUE,
+              helpText("If you want to download the data you've entered, click below."),
+              downloadButton("downloadData", "Download Data"),
+              br(),
+              br(),
+              width=12
+            ),
+            box(
+              title="5. Plot Download",
+              collapsible = TRUE,
+              helpText("If you want to download an image of the plot, click below."),
+              downloadButton("downloadPlot", "Download Plot"),
+              width=12
+            )
+        )
+      ),
+      tags$head(tags$style(HTML('.content-wrapper { overflow: auto; }'))))
   )
-))
-}
+)}
 
 server <- function(input, output, session){
   values <- reactiveValues()
@@ -144,7 +242,7 @@ server <- function(input, output, session){
       levsother
     }
     
-    rhandsontable(values[["DF"]], stretchH = "all", overflow = 'visible') %>% #width="300px", 
+    rhandsontable(values[["DF"]], stretchH = "all") %>% #width="300px", 
       hot_col("Support", type = "dropdown", source = dropdownOptions) %>%
       hot_col("Relevance", type = "dropdown", source = dropdownOptionsother) %>%
       hot_col("Source.reliability", type = "dropdown", source = dropdownOptionsother) %>%
@@ -430,7 +528,7 @@ server <- function(input, output, session){
       
       #output$debug1 <- renderText({str(zig.sort)})
       minnumoutcat <- min(numericoutcomeCats())
-      adjustsizeplot <- 20+(20*0.25*(1-minnumoutcat/-2))
+      adjustsizeplot <- 22+(22*0.25*(1-minnumoutcat/-2))
 
       ggplot()+
         geom_tile(data=zig.sort, aes(x=numeric.support,y=y.coord,width=numeric.weight/(input[["maxvalues"]]**3),height=1, fill=factor(numeric.support), colour=factor(numeric.support)),alpha=0.4, size=0.3)+
@@ -441,10 +539,10 @@ server <- function(input, output, session){
         scale_colour_manual(values = c("#990000","#FFCC00","#66CC00","darkgreen"),guide="none")+
         scale_alpha(guide='none')+
         xlab("Strength of support")+
-        ylab("Number of pieces of evidence")+
+        ylab("Number of\npieces of evidence")+
         theme_classic()+
-        theme(axis.title.y = element_text(size=25, margin = unit(c(0, 5, 0, 0), "mm")), 
-              axis.title.x = element_text(size=25, margin = unit(c(5, 0, 0, 0), "mm")),
+        theme(axis.title.y = element_text(size=24, margin = unit(c(0, 5, 0, 0), "mm")), 
+              axis.title.x = element_text(size=24, margin = unit(c(5, 0, 0, 0), "mm")),
               axis.text = element_text(size=adjustsizeplot))+
         geom_point(data=zig.w.means,aes(x=w.mean,y=-0.5),shape=16,size=5)+
         geom_errorbarh(aes(xmin=lower.ci,xmax=upper.ci,y=-0.5),size=size1,height=0.5)
