@@ -23,7 +23,7 @@ The repository ziggurat-plot-app is copyright (c) 2023 Alec Christie, but it is 
 
 The Ziggurat plot app (including its online implementation at https://alecchristie888.shinyapps.io/ziggurat-plot-app/) by Alec P. Christie and authors listed in Christie et al. 2023 (https://osf.io/ujk6n/) is licensed under a Creative Commons Attribution-ShareAlike 4.0 International License (based on a work at https://github.com/alecchristie888/ziggurat-plot-app). 
 
-<a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.
+<a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png" /></a><br /><a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.
 
 # Acknowledgements
 I'd like to acknowledge the help of Dr Hannah Wauchope and Dr William Morgan in coding early versions of the Ziggurat plot app, which I then refined and adapted into the app that is now published.
