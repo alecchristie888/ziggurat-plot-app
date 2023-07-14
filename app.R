@@ -47,7 +47,7 @@ ui <- function(request){shinyUI(
                   h2("Introduction"),
                   p("This application is to assist those assessing assumptions using the Balance Evidence Assessment Model. To read more about the Balance Evidence Assessment Model, you can read",
                   a(href="https://doi.org/10.31219/osf.io/ujk6n","this article.",target="_blank"),
-                  "A published open-access article will be available soon.",style='font-size:17px;'),
+                  "A published open-access article will be available soon. These articles contain guidance on its use and important considerations - such as ensuring that those assessing the evidence are representative of the diversity of the evidence itself.",style='font-size:17px;'),
                   p("The Balance Evidence Assessment Model (BEAM) is designed to help with the issue of how to weigh several 
                   different pieces of evidence that may differ greatly in their source and relevance. A piece of evidence can be defined as:
                   'Any relevant data, information, knowledge, and wisdom used to assess an assumption' related to a question of interest.
@@ -93,6 +93,17 @@ ui <- function(request){shinyUI(
                   in an assumption (i.e., a higher threshold or required level of proof), you could change the value for Refutes to -4, effectively doubling the leverage of refuting evidence (see below).",style='font-size:17px;'),
                   br(),
                   img(src="Zigplotsleverage.png",height="30%",width="30%"),
+                  br(),
+                  h2("Copyright"),
+                  "The Ziggurat plot app by Alec P. Christie and authors listed in Christie et al. (2023; https://osf.io/ujk6n/) is licensed under a", 
+                  a(href="http://creativecommons.org/licenses/by-sa/4.0/","Creative Commons Attribution-ShareAlike 4.0 International License."),
+                  "Based on a work at:", 
+                  a(href="https://github.com/alecchristie888/ziggurat-plot-app","https://github.com/alecchristie888/ziggurat-plot-app.",target="_blank"),
+                  br(),
+                  img(href="http://creativecommons.org/licenses/by-sa/4.0/", style="border-width:0", src="https://i.creativecommons.org/l/by-sa/4.0/88x31.png",target="_blank"),
+                  br(),
+                  h2("Acknowledgements"),
+                  p("I'd like to acknowledge the help of Dr Hannah Wauchope and Dr William Morgan in coding early versions of the Ziggurat plot app, which I then refined and adapted into the app that is now published."),
                   width=12
                 )),
           tabItem(
