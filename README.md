@@ -13,9 +13,8 @@ The app supports bookmarking and has three separate tabs for information on the 
 ## www
 The www folder, as is convention with all shiny apps, contains static files and data that the app draws upon to run. This includes images, guidance documents, and an offline template. 
 
-# Running the app on your own shiny server or locally
-I used this excellent online blog (https://deanattali.com/2015/05/09/setup-rstudio-shiny-server-digital-ocean) to set up my own shiny server using a digital ocean droplet, which I would recommend as a cost-effective way to develop your own versions or iterations of this tool or related tools.
-To run the shiny app locally, you should to simply select and run all of the lines of code in `app.R`. In R Studio, there is also a button for `Run App`. The app should open in a browser on your computer or in R Studio depending on your settings.
+# Running the app locally
+To run the shiny app locally, you should to simply select and run all of the lines of code in `app.R`. In R Studio, there is also a button for `Run App`. The app should open in a browser on your computer or in R Studio depending on your settings. You can publish the app using a shinyapps.io account for which free licenses are avaiable (at time of writing, this gives you 5 free applications).
 
 # Copyright
 There are two separate licenses, one for the open source code and one for the online tool (i.e., about its name and concept).
@@ -23,3 +22,6 @@ There are two separate licenses, one for the open source code and one for the on
 The repository ziggurat-plot-app is copyright (c) 2023 Alec Christie, but it is Open Source and licensed under the MIT License.
 
 The Ziggurat plot app (including its online implementation at https://alecchristie888.shinyapps.io/ziggurat-plot-app/) by Alec P. Christie and authors listed in Christie et al. 2023 (https://osf.io/ujk6n/) is licensed under a Creative Commons Attribution-ShareAlike 4.0 International License (based on a work at https://github.com/alecchristie888/ziggurat-plot-app). 
+
+# Acknowledgements
+I'd like to acknowledge the help of Dr Hannah Wauchope and Dr William Morgan in coding early versions of the Ziggurat plot app, which I then refined and adapted into the app that is now published.
