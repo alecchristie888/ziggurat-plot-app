@@ -16,7 +16,7 @@ DF_template = data.frame("Evidence"=LETTERS[1:5], "Relevance" = rep("",5), "Sour
 ui <- function(request){shinyUI(
   
   dashboardPage(skin = "yellow",
-                dashboardHeader(title="Ziggurat Plot Application", titleWidth = "calc(100% - 44px)"),
+                dashboardHeader(title="Balance Evidence Assessment Model - Ziggurat Plot Application", titleWidth = "calc(100% - 44px)"),
                 dashboardSidebar(
                   sidebarMenu(id = "tabs",
                               menuItem(
@@ -44,15 +44,19 @@ ui <- function(request){shinyUI(
           tabItem(
             tabName="info_tab",
                 box(
-                  h2("Introduction"),
+                  h2("About this app"),
                   p("This application is to assist those assessing assumptions using the Balance Evidence Assessment Model. To read more about the Balance Evidence Assessment Model, you can read",
                   a(href="https://doi.org/10.31219/osf.io/ujk6n","this article.",target="_blank"),
-                  "A published open-access article will be available soon. These articles contain guidance on its use and important considerations - such as ensuring that those assessing the evidence are representative of the diversity of the evidence itself.",style='font-size:17px;'),
+                  "A published open-access article will be available soon",
+                  a(href="https://doi.org/10.1111/csp2.13024","here.", target="_blank"),
+                  "These articles contain guidance on its use and important considerations - such as ensuring that those assessing the evidence are representative of the diversity of the evidence itself.",style='font-size:17px;'),
+                  h3("What is the Balance Evidence Assessment Model?"),
                   p("The Balance Evidence Assessment Model (BEAM) is designed to help with the issue of how to weigh several 
                   different pieces of evidence that may differ greatly in their source and relevance. A piece of evidence can be defined as:
                   'Any relevant data, information, knowledge, and wisdom used to assess an assumption' related to a question of interest.
                   BEAM is applied to assumptions, which can be identified when planning a project, to understand how strong the evidence is and our confidence
                   that the assumption is valid.",style='font-size:17px;'),
+                  h3("An illustrative example"),
                   p("As an example, imagine you are part of a local NGO team on a project aiming to reduce and reverse the decline in seabird populations on an 
                   island on which rats have been introduced. Following the",
                   a(href="https://conservationstandards.org/about/","Conservation Standards,",target="_blank"),
@@ -68,7 +72,7 @@ ui <- function(request){shinyUI(
                   p("To check if these assumptions are valid you'll need to assess evidence from a range of sources including, but not limited to, local knowledge, 
                   experience, and wisdom of practitioners and partners, scientific studies and syntheses, expert judgements, reports, databases (e.g., citizen 
                   science), local records, and observations.",style='font-size:17px;'),
-                  h2("Balance Evidence Assessment Model (BEAM)"),
+                  h2("How the BEAM works"),
                   p("BEAM helps you weigh this evidence by treating each piece of evidence as a cube. The size of each cube represents the weight of that piece of 
                   evidence, which is represented by three dimensions: the information reliability, source reliability, and relevance. The diagram below shows how you
                   can imagine weighing the evidence. Bigger cubes represent evidence with greater weight. The evidence may either refute or support the assumption you're
@@ -86,7 +90,7 @@ ui <- function(request){shinyUI(
                   br(),
                   img(src="Zigplots.png",height="60%",width="60%"),
                   br(),
-                  p("In the next tab (Define Values), you can edit the values you can assign to the pieces of evidence. We suggest a scale of 0-3 for assessing the information 
+                  p("In the next tab (Define Values - left of screen above), you can edit the values you can assign to the pieces of evidence. We suggest a scale of 0-3 for assessing the information 
                   reliability, source reliability, and relevance. You can also edit the names you give to different levels of support (we suggest the ones as above).
                   You can also edit the numerical values associated to each level of support, for which the defaults are:
                   -2 = Refutes, 0 = Mixed, 1 = Weakly Supports, and 2 = Strongly Supports. If you wanted to increase the required amount of supporting evidence for you to have confidence 
